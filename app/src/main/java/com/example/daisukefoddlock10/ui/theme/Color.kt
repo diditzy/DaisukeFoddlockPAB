@@ -2,35 +2,52 @@ package com.example.daisukefoddlock10.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PrimaryRed = Color(0xFFD32F2F) // Hunger Red
-val OnPrimaryRed = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFFFDAD4)
-val OnPrimaryContainer = Color(0xFF410001)
+// --- Light Theme Colors ---
+val MerahJepang = Color(0xFFE62129)
+val EmasSoft = Color(0xFFD4AF37)
+val OnMerahJepang = Color(0xFFFFFFFF)
+val OnEmasSoft = Color(0xFFFFFFFF)
 
-val SecondaryYellow = Color(0xFFFFD600) // Trigger Yellow
-val OnSecondaryYellow = Color(0xFF000000)
-val SecondaryContainer = Color(0xFFFFE082)
-val OnSecondaryContainer = Color(0xFF241A00)
+val PrimaryContainerLight = Color(0xFFFFDAD6)
+val OnPrimaryContainerLight = Color(0xFF410002)
+val SecondaryContainerLight = Color(0xFFFEF5E7)
+val OnSecondaryContainerLight = Color(0xFF3E2723)
 
-val Tertiary = Color(0xFF9C4146)
-val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFFFDAD9)
-val OnTertiaryContainer = Color(0xFF40000A)
+val BackgroundLight = Color(0xFFFFFDF9)
+val SurfaceLight = Color(0xFFFFFBEE)
+val OnSurfaceLight = Color(0xFF1C1B1F)
+val SurfaceVariantLight = Color(0xFFF9F1E7)
+val OnSurfaceVariantLight = Color(0xFF4E4439)
+val OutlineLight = Color(0xFFD7CCC8)
 
+// --- Dark Theme Colors ---
+val MerahJepangDark = Color(0xFFFFB4AB)
+val EmasSoftDark = Color(0xFFEFBF48)
+val OnMerahJepangDark = Color(0xFF690005)
+
+val PrimaryDark = Color(0xFFFFB4AB)
+val OnPrimaryDark = Color(0xFF690005)
+val PrimaryContainerDark = Color(0xFF93000A)
+val OnPrimaryContainerDark = Color(0xFFFFDAD6)
+
+val SecondaryDark = Color(0xFFD4AF37)
+val OnSecondaryDark = Color(0xFF3A2F00)
+val SecondaryContainerDark = Color(0xFF544500)
+val OnSecondaryContainerDark = Color(0xFFFFE190)
+
+val BackgroundDark = Color(0xFF1C1B1F) // Hitam Carbon
+val SurfaceDark = Color(0xFF252429)    // Abu Gelap
+val OnSurfaceDark = Color(0xFFE6E1E5)
+val SurfaceVariantDark = Color(0xFF4E4439)
+val OnSurfaceVariantDark = Color(0xFFD7CCC8)
+val OutlineDark = Color(0xFF9F8D8A)
+
+// --- Common Colors ---
 val Error = Color(0xFFBA1A1A)
 val OnError = Color(0xFFFFFFFF)
 val ErrorContainer = Color(0xFFFFDAD6)
 val OnErrorContainer = Color(0xFF410002)
 
-val Background = Color(0xFFFFFBFF)
-val OnBackground = Color(0xFF201A18)
-val Surface = Color(0xFFFFFBFF)
-val OnSurface = Color(0xFF201A18)
-val SurfaceVariant = Color(0xFFF5DED5)
-val OnSurfaceVariant = Color(0xFF53433E)
-val Outline = Color(0xFF85736D)
-
-// Brand Colors for Payment
 val ColorGoPay = Color(0xFF00AED6)
 val ColorShopeePay = Color(0xFFEE4D2D)
 val ColorOVO = Color(0xFF4C3494)

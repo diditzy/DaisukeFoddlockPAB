@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
@@ -24,6 +26,7 @@ import com.example.daisukefoddlock10.data.model.promoVoucherList
 import com.example.daisukefoddlock10.formatRupiah
 import com.example.daisukefoddlock10.ui.components.*
 import com.example.daisukefoddlock10.ui.screens.SharedOrderViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +36,9 @@ fun OrderScreen(
     onHistoryClick: () -> Unit
 ) {
     val uiState by viewModel.orderState.collectAsStateWithLifecycle()
+    var isVoucherSheetOpen by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -43,7 +49,7 @@ fun OrderScreen(
                         Icon(Icons.Default.History, contentDescription = "History")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
@@ -118,7 +124,7 @@ fun OrderScreen(
             item {
                 VoucherSelector(
                     appliedVoucher = uiState.appliedVoucher,
-                    onVoucherSelected = { viewModel.applyVoucher(it) }
+                    onVoucherClick = { isVoucherSheetOpen = true }
                 )
             }
             item {
@@ -135,53 +141,94 @@ fun OrderScreen(
             }
             item { Spacer(modifier = Modifier.height(80.dp)) }
         }
+
+        if (isVoucherSheetOpen) {
+            ModalBottomSheet(
+                onDismissRequest = { isVoucherSheetOpen = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                VoucherBottomSheetContent(
+                    selectedVoucher = uiState.appliedVoucher,
+                    onVoucherSelected = { 
+                        viewModel.applyVoucher(it)
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { 
+                            isVoucherSheetOpen = false 
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun VoucherSelector(
     appliedVoucher: PromoVoucher?,
-    onVoucherSelected: (PromoVoucher?) -> Unit
+    onVoucherClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        onClick = onVoucherClick
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            SectionTitle("🎟️ Promo Tersedia")
-            
-            if (appliedVoucher != null) {
-                InputChip(
-                    selected = true,
-                    onClick = { onVoucherSelected(null) },
-                    label = { Text(appliedVoucher.title) },
-                    trailingIcon = { Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp)) },
-                    modifier = Modifier.padding(bottom = 8.dp)
+        ListItem(
+            headlineContent = { Text("🎟️ Promo & Voucher") },
+            supportingContent = { 
+                Text(appliedVoucher?.title ?: "Gunakan voucher biar lebih hemat!") 
+            },
+            trailingContent = { 
+                if (appliedVoucher != null) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF2E7D32))
+                } else {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        )
+    }
+}
+
+@Composable
+fun VoucherBottomSheetContent(
+    selectedVoucher: PromoVoucher?,
+    onVoucherSelected: (PromoVoucher?) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            "Pilih Voucher",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(16.dp)
+        )
+        
+        LazyColumn {
+            item {
+                ListItem(
+                    headlineContent = { Text("Tidak Menggunakan Voucher") },
+                    leadingContent = { 
+                        RadioButton(selected = selectedVoucher == null, onClick = null) 
+                    },
+                    modifier = Modifier.clickable { onVoucherSelected(null) }
                 )
             }
-
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(promoVoucherList) { voucher ->
-                    val isSelected = voucher.id == appliedVoucher?.id
-                    Card(
-                        modifier = Modifier
-                            .width(160.dp)
-                            .clickable { onVoucherSelected(voucher) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                                             else MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
-                    ) {
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            Text(voucher.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-                            Text(voucher.description, style = MaterialTheme.typography.labelSmall, maxLines = 2)
-                            Text("Min. Rp${formatRupiah(voucher.minOrder)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
+            items(promoVoucherList) { voucher ->
+                val isSelected = voucher.id == selectedVoucher?.id
+                ListItem(
+                    headlineContent = { Text(voucher.title, fontWeight = FontWeight.Bold) },
+                    supportingContent = { Text(voucher.description) },
+                    overlineContent = { Text("Min. Order Rp${formatRupiah(voucher.minOrder)}", color = MaterialTheme.colorScheme.primary) },
+                    leadingContent = { 
+                        RadioButton(selected = isSelected, onClick = null) 
+                    },
+                    modifier = Modifier.clickable { onVoucherSelected(voucher) }
+                )
             }
         }
     }
