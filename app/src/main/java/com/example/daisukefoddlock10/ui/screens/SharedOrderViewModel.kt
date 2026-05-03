@@ -73,4 +73,8 @@ class SharedOrderViewModel : ViewModel() {
     fun resetOrder() {
         _orderState.value = OrderState()
     }
+
+    fun clearHistory() {
+        _orderHistory.value = emptyList()
+    }
 }
