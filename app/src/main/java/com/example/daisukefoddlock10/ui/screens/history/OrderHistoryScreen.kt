@@ -2,7 +2,6 @@ package com.example.daisukefoddlock10.ui.screens.history
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,8 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.daisukefoddlock10.data.model.OrderHistory
@@ -38,7 +36,7 @@ fun OrderHistoryScreen(
     onBack: () -> Unit
 ) {
     val history by viewModel.orderHistory.collectAsStateWithLifecycle()
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -51,7 +49,7 @@ fun OrderHistoryScreen(
                 },
                 actions = {
                     if (history.isNotEmpty()) {
-                        IconButton(onClick = { showDeleteDialog = true }) {
+                        IconButton(onClick = { showDeleteAllDialog = true }) {
                             Icon(Icons.Default.DeleteSweep, contentDescription = "Hapus Semua")
                         }
                     }
@@ -59,23 +57,23 @@ fun OrderHistoryScreen(
             )
         }
     ) { innerPadding ->
-        if (showDeleteDialog) {
+        if (showDeleteAllDialog) {
             AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
+                onDismissRequest = { showDeleteAllDialog = false },
                 title = { Text("Hapus Riwayat") },
                 text = { Text("Apakah Anda yakin ingin menghapus semua riwayat pesanan? Tindakan ini tidak dapat dibatalkan.") },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             viewModel.clearHistory()
-                            showDeleteDialog = false
+                            showDeleteAllDialog = false
                         }
                     ) {
                         Text("Hapus Semua", color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
+                    TextButton(onClick = { showDeleteAllDialog = false }) {
                         Text("Batal")
                     }
                 }
@@ -112,7 +110,10 @@ fun OrderHistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(history) { order ->
-                    OrderHistoryCard(order = order)
+                    OrderHistoryCard(
+                        order = order,
+                        onDelete = { viewModel.deleteOrder(order.orderId) }
+                    )
                 }
             }
         }
@@ -120,7 +121,10 @@ fun OrderHistoryScreen(
 }
 
 @Composable
-fun OrderHistoryCard(order: OrderHistory) {
+fun OrderHistoryCard(
+    order: OrderHistory,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -137,7 +141,21 @@ fun OrderHistoryCard(order: OrderHistory) {
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
-                StatusBadge(status = order.status)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusBadge(status = order.status)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Hapus Pesanan",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

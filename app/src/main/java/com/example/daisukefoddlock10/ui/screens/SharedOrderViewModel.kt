@@ -100,6 +100,19 @@ class SharedOrderViewModel @Inject constructor(
         _orderState.value = OrderState()
     }
 
+    fun deleteOrder(orderId: String) {
+        viewModelScope.launch {
+            try {
+                orderDao.deleteOrderById(orderId.toInt())
+            } catch (e: Exception) {
+                Log.e("SharedOrderViewModel", "Error deleting order: ${e.message}")
+            }
+        }
+    }
+
     fun clearHistory() {
+        viewModelScope.launch {
+            orderDao.deleteAllOrders()
+        }
     }
 }

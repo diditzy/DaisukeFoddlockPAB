@@ -14,4 +14,10 @@ interface OrderDao {
 
     @Query("SELECT * FROM orders ORDER BY timestamp DESC")
     fun getAllOrders(): Flow<List<OrderEntity>>
+
+    @Query("DELETE FROM orders")
+    suspend fun deleteAllOrders()
+
+    @Query("DELETE FROM orders WHERE id = :orderId")
+    suspend fun deleteOrderById(orderId: Int)
 }
