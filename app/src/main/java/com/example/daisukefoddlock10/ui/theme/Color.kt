@@ -35,8 +35,8 @@ val OnSecondaryDark = Color(0xFF3A2F00)
 val SecondaryContainerDark = Color(0xFF544500)
 val OnSecondaryContainerDark = Color(0xFFFFE190)
 
-val BackgroundDark = Color(0xFF1C1B1F) // Hitam Carbon
-val SurfaceDark = Color(0xFF252429)    // Abu Gelap
+val BackgroundDark = Color(0xFF1C1B1F)
+val SurfaceDark = Color(0xFF252429)
 val OnSurfaceDark = Color(0xFFE6E1E5)
 val SurfaceVariantDark = Color(0xFF4E4439)
 val OnSurfaceVariantDark = Color(0xFFD7CCC8)

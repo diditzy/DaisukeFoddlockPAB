@@ -2,19 +2,46 @@ package com.example.daisukefoddlock10.ui.screens
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.daisukefoddlock10.data.local.dao.OrderDao
+import com.example.daisukefoddlock10.data.local.entity.OrderEntity
 import com.example.daisukefoddlock10.data.model.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import java.util.UUID
 
-class SharedOrderViewModel : ViewModel() {
+@HiltViewModel
+class SharedOrderViewModel @Inject constructor(
+    private val orderDao: OrderDao
+) : ViewModel() {
     private val _orderState = MutableStateFlow(OrderState())
     val orderState: StateFlow<OrderState> = _orderState.asStateFlow()
 
-    private val _orderHistory = MutableStateFlow<List<OrderHistory>>(dummyOrderHistoryList)
-    val orderHistory: StateFlow<List<OrderHistory>> = _orderHistory.asStateFlow()
+    // Ambil data dari Room Database (Real-time Flow)
+    val orderHistory: StateFlow<List<OrderHistory>> = orderDao.getAllOrders()
+        .map { entities ->
+            entities.map { entity ->
+                OrderHistory(
+                    orderId = entity.id.toString(),
+                    food = foodMenuList.find { it.name == entity.foodName } ?: foodMenuList[0],
+                    size = PortionSize.REGULAR,
+                    toppings = emptySet(),
+                    isTakeaway = false,
+                    notes = "",
+                    totalPrice = entity.price.toInt(),
+                    paymentMethod = "Tunai",
+                    status = OrderStatus.COMPLETED,
+                    timestamp = entity.timestamp
+                )
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun selectFood(food: FoodItem) {
         _orderState.update { it.copy(selectedFood = food) }
@@ -54,18 +81,17 @@ class SharedOrderViewModel : ViewModel() {
     fun confirmOrder(paymentMethod: String): String {
         val orderId = UUID.randomUUID().toString().take(8).uppercase()
         val current = _orderState.value
-        val newOrder = OrderHistory(
-            orderId = orderId,
-            food = current.selectedFood,
-            size = current.selectedSize,
-            toppings = current.toppings,
-            isTakeaway = current.isTakeaway,
-            notes = current.notes,
-            totalPrice = current.totalPrice,
-            paymentMethod = paymentMethod,
-            appliedVoucher = current.appliedVoucher?.title
-        )
-        _orderHistory.update { listOf(newOrder) + it }
+        
+        // Simpan ke Room Database
+        viewModelScope.launch {
+            orderDao.insertOrder(
+                OrderEntity(
+                    foodName = current.selectedFood.name,
+                    price = current.totalPrice.toDouble()
+                )
+            )
+        }
+
         Log.d("ORDER", "Confirmed #$orderId via $paymentMethod | Total: ${current.totalPrice}")
         return orderId
     }
@@ -75,6 +101,5 @@ class SharedOrderViewModel : ViewModel() {
     }
 
     fun clearHistory() {
-        _orderHistory.value = emptyList()
     }
 }
