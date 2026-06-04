@@ -1,7 +1,11 @@
 package com.example.daisukefoddlock10.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class PortionSize { REGULAR, LARGE }
 
+@Serializable
 enum class Topping(val category: ToppingCategory) {
     // Savory Toppings
     EGG(ToppingCategory.SAVORY),

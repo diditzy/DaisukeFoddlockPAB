@@ -4,7 +4,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,12 +24,22 @@ fun LogisticsInfoBanner(
     order: OrderLogistics,
     modifier: Modifier = Modifier
 ) {
-    val isInTransit = order.status == OrderLogisticsStatus.IN_TRANSIT
+    val isInTransit  = order.status == OrderLogisticsStatus.IN_TRANSIT
+    val isDelivered  = order.status == OrderLogisticsStatus.DELIVERED
+    val isPreparing  = order.status == OrderLogisticsStatus.PREPARING
+
     val containerColor by animateColorAsState(
-        targetValue = if (isInTransit) Color(0xFF2E7D32) else Color(0xFFE8F5E9),
+        targetValue = when {
+            isDelivered -> Color(0xFF1565C0)   // Biru gelap — selesai
+            isInTransit -> Color(0xFF2E7D32)   // Hijau — sedang diantar
+            else        -> Color(0xFFE8F5E9)   // Hijau muda — sedang disiapkan
+        },
         label = "status_color"
     )
-    val contentColor = if (isInTransit) Color.White else Color(0xFF2E7D32)
+    val contentColor = when {
+        isDelivered || isInTransit -> Color.White
+        else                       -> Color(0xFF2E7D32)
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -42,38 +54,52 @@ fun LogisticsInfoBanner(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = if (isInTransit) Icons.Default.DirectionsRun else Icons.Default.Timer,
+                        imageVector = when {
+                            isDelivered -> Icons.Default.CheckCircle
+                            isInTransit -> Icons.AutoMirrored.Filled.DirectionsRun
+                            else        -> Icons.Default.Restaurant
+                        },
                         contentDescription = null,
                         tint = contentColor,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = order.origin_name,
+                        text = when {
+                            isDelivered -> "Pesanan Selesai! 🎉"
+                            isInTransit -> order.origin_name
+                            else        -> "Sedang Disiapkan..."
+                        },
                         style = MaterialTheme.typography.labelLarge,
                         color = contentColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Text(
-                    text = "Tujuan: ${order.destination_name}",
+                    text = when {
+                        isDelivered -> "Makananmu sudah tiba. Selamat menikmati!"
+                        isInTransit -> "Tujuan: ${order.destination_name}"
+                        else        -> "Pesananmu sedang diproses merchant"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = contentColor.copy(alpha = 0.8f)
                 )
             }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${order.total_eta} Min",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = contentColor,
-                    fontWeight = FontWeight.Black
-                )
-                Text(
-                    text = if (isInTransit) "Sedang Diantar" else "Estimasi Kedatangan",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = 0.7f)
-                )
+            if (!isDelivered) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${order.total_eta} Min",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = contentColor,
+                        fontWeight = FontWeight.Black
+                    )
+                    Text(
+                        text = if (isInTransit) "Sedang Diantar" else "Estimasi Kedatangan",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }

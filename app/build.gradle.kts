@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.datastore.preferences)
 
     // Retrofit
     implementation(libs.retrofit.core)
@@ -65,6 +66,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
     // Room
@@ -75,6 +77,7 @@ dependencies {
     // Supabase & Ktor
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.kt)
+    implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.realtime)
     implementation(libs.ktor.client.android)

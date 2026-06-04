@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -35,7 +36,8 @@ import kotlinx.coroutines.launch
 fun OrderScreen(
     viewModel: SharedOrderViewModel,
     onCheckout: () -> Unit,
-    onHistoryClick: () -> Unit
+    onHistoryClick: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val uiState by viewModel.orderState.collectAsStateWithLifecycle()
     val logisticsState by viewModel.activeOrderLogistics.collectAsStateWithLifecycle()
@@ -53,6 +55,13 @@ fun OrderScreen(
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(Icons.Default.History, contentDescription = "History")
+                    }
+                    IconButton(onClick = onSignOut) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp, 
+                            contentDescription = "Logout",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)

@@ -75,10 +75,11 @@ fun PaymentScreen(
                             } else {
                                 isProcessing = true
                                 scope.launch {
-                                    delay(2000)
-                                    val orderId = viewModel.confirmOrder(selectedPayment!!.name)
-                                    viewModel.resetOrder()
-                                    onPaymentSuccess(orderId, selectedPayment!!.name)
+                                    viewModel.confirmOrder(selectedPayment!!.name) { orderId ->
+                                        isProcessing = false
+                                        viewModel.resetOrder()
+                                        onPaymentSuccess(orderId, selectedPayment!!.name)
+                                    }
                                 }
                             }
                         },
@@ -186,10 +187,11 @@ fun PaymentScreen(
                     showQrisDialog = false
                     isProcessing = true
                     scope.launch {
-                        delay(1500)
-                        val orderId = viewModel.confirmOrder("QRIS")
-                        viewModel.resetOrder()
-                        onPaymentSuccess(orderId, "QRIS")
+                        viewModel.confirmOrder("QRIS") { orderId ->
+                            isProcessing = false
+                            viewModel.resetOrder()
+                            onPaymentSuccess(orderId, "QRIS")
+                        }
                     }
                 }) { Text("Konfirmasi Sudah Bayar") }
             },
