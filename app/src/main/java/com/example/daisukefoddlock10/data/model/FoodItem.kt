@@ -2,10 +2,14 @@ package com.example.daisukefoddlock10.data.model
 
 import com.example.daisukefoddlock10.R
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class ToppingCategory {
     SAVORY, SWEET, NONE
 }
 
+@Serializable
 data class FoodItem(
     val id: Int,
     val name: String,

@@ -17,7 +17,14 @@ import com.example.daisukefoddlock10.ui.screens.order.OrderScreen
 import com.example.daisukefoddlock10.ui.screens.payment.PaymentScreen
 import com.example.daisukefoddlock10.ui.screens.payment.PaymentSuccessScreen
 
+import com.example.daisukefoddlock10.data.model.UserRole
+import com.example.daisukefoddlock10.ui.screens.auth.AuthViewModel
+import com.example.daisukefoddlock10.ui.screens.auth.LoginScreen
+import com.example.daisukefoddlock10.ui.screens.merchant.MerchantDashboardScreen
+
 sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object MerchantDashboard : Screen("merchant_dashboard")
     object Order : Screen("order")
     object Checkout : Screen("checkout")
     object Payment : Screen("payment/{totalPrice}") {
@@ -30,15 +37,52 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
     val viewModel: SharedOrderViewModel = viewModel(LocalActivity.current as ComponentActivity)
 
-    NavHost(navController, startDestination = Screen.Order.route) {
+    NavHost(navController, startDestination = Screen.Login.route) {
+        composable(Screen.Login.route) {
+            LoginScreen(
+                viewModel = authViewModel,
+                onLoginSuccess = {
+                    val session = authViewModel.uiState.value.session
+                    if (session?.role == UserRole.MERCHANT) {
+                        navController.navigate(Screen.MerchantDashboard.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Screen.Order.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.MerchantDashboard.route) {
+            MerchantDashboardScreen(
+                onSignOut = {
+                    authViewModel.signOut()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Screen.Order.route) {
             OrderScreen(
                 viewModel = viewModel,
                 onCheckout = { navController.navigate(Screen.Checkout.route) },
-                onHistoryClick = { navController.navigate(Screen.History.route) }
+                onHistoryClick = { navController.navigate(Screen.History.route) },
+                onSignOut = {
+                    authViewModel.signOut()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
         composable(Screen.Checkout.route) {

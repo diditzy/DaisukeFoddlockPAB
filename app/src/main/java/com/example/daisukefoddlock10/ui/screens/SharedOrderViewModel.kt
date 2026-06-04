@@ -7,6 +7,7 @@ import com.example.daisukefoddlock10.data.local.dao.OrderDao
 import com.example.daisukefoddlock10.data.local.entity.OrderEntity
 import com.example.daisukefoddlock10.data.model.*
 import com.example.daisukefoddlock10.data.repository.LogisticsRepository
+import com.example.daisukefoddlock10.data.repository.OrderRepository
 import com.example.daisukefoddlock10.formatTimestamp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,7 +18,8 @@ import java.util.UUID
 @HiltViewModel
 class SharedOrderViewModel @Inject constructor(
     private val orderDao: OrderDao,
-    private val logisticsRepository: LogisticsRepository
+    private val logisticsRepository: LogisticsRepository,
+    private val orderRepository: OrderRepository
 ) : ViewModel() {
     private val _orderState = MutableStateFlow(OrderState())
     val orderState: StateFlow<OrderState> = _orderState.asStateFlow()
@@ -29,6 +31,7 @@ class SharedOrderViewModel @Inject constructor(
     val remainingMinutes: StateFlow<Int> = _remainingMinutes.asStateFlow()
 
     private var countdownJob: kotlinx.coroutines.Job? = null
+    private var statusPollingJob: kotlinx.coroutines.Job? = null
 
     fun startCountdown() {
         countdownJob?.cancel()
@@ -42,7 +45,10 @@ class SharedOrderViewModel @Inject constructor(
 
     private fun stopCountdown() {
         countdownJob?.cancel()
+        statusPollingJob?.cancel()
         _remainingMinutes.value = 20
+        // Hapus banner estimasi dari layar customer
+        _activeOrderLogistics.value = null
     }
 
     // Ambil data dari Room Database (Real-time Flow)
@@ -183,29 +189,63 @@ class SharedOrderViewModel @Inject constructor(
         _orderState.update { it.copy(appliedVoucher = voucher) }
     }
 
-    fun confirmOrder(paymentMethod: String): String {
-        val transactionId = UUID.randomUUID().toString().take(8).uppercase()
+    fun confirmOrder(paymentMethod: String, onComplete: (String) -> Unit) {
         val current = _orderState.value
-        
-        if (current.cartItems.isEmpty()) return ""
-
-        val totalSubtotal = current.cartSubtotal
-        val discount = current.discount
+        if (current.cartItems.isEmpty()) return
 
         viewModelScope.launch {
+            var transactionId = ""
             try {
-                // 1. Simpan ke Room Database
-                current.cartItems.forEach { item ->
-                    val itemProportion = if (totalSubtotal > 0) item.itemTotalPrice.toDouble() / totalSubtotal else 0.0
-                    val itemDiscount = discount * itemProportion
-                    val finalItemPrice = item.itemTotalPrice - itemDiscount
+                // 1. Konversi CartItem ke OrderItemData (tanpa imageRes agar bisa dikirim ke Supabase)
+                val orderItems = current.cartItems.map { item ->
+                    OrderItemData(
+                        food_name = item.food.name,
+                        food_id = item.food.id,
+                        quantity = item.quantity,
+                        size = item.size.name,
+                        toppings = item.toppings.map { it.name },
+                        spicy_level = item.spicyLevel,
+                        item_total_price = item.itemTotalPrice
+                    )
+                }
 
+                // 2. Kirim ke Supabase dengan timeout agar tidak loading selamanya
+                val orderRequest = OrderRequest(
+                    total_price = current.totalPrice,
+                    status = "PENDING",
+                    is_delivery = current.isDelivery,
+                    is_takeaway = current.isTakeaway,
+                    delivery_address = if (current.isDelivery) current.deliveryAddress else null,
+                    notes = current.notes.ifBlank { null },
+                    items = orderItems
+                )
+                
+                val result = kotlinx.coroutines.withTimeoutOrNull(5000) {
+                    orderRepository.placeOrder(orderRequest)
+                }
+
+                if (result != null && result.isSuccess) {
+                    transactionId = result.getOrNull()?.id ?: UUID.randomUUID().toString().take(8).uppercase()
+                    Log.d("ORDER", "Successfully placed order in Supabase with id: $transactionId")
+                } else {
+                    val exception = result?.exceptionOrNull()
+                    Log.w("ORDER", "Supabase order failed or timed out: ${exception?.message}. Falling back to local ID.")
+                    transactionId = UUID.randomUUID().toString().take(8).uppercase()
+                }
+            } catch (e: Exception) {
+                Log.e("ORDER", "Error during Supabase order request: ${e.message}. Falling back to local ID.")
+                transactionId = UUID.randomUUID().toString().take(8).uppercase()
+            }
+
+            try {
+                // 2. Simpan ke Room Database (untuk history lokal)
+                current.cartItems.forEach { item ->
                     orderDao.insertOrder(
                         OrderEntity(
                             transactionId = transactionId,
                             foodName = item.food.name,
                             quantity = item.quantity,
-                            price = finalItemPrice,
+                            price = item.itemTotalPrice.toDouble(), // Simple mapping
                             size = item.size.name,
                             toppings = item.toppings.joinToString(",") { it.name },
                             notes = current.notes,
@@ -215,40 +255,77 @@ class SharedOrderViewModel @Inject constructor(
                     )
                 }
 
-                // 2. Bersihkan keranjang
+                // 3. Bersihkan keranjang
                 clearCart()
                 
-                // 3. Inisialisasi Logistik
+                // 4. Inisialisasi Logistik
                 val mockLogistics = logisticsRepository.getMockLogistics(transactionId)
                 _activeOrderLogistics.value = mockLogistics
                 startCountdown()
                 
-                launch {
-                    logisticsRepository.observeOrderStatus(transactionId)
-                        .catch { e -> Log.e("ORDER", "Logistics observation failed: ${e.message}") }
-                        .collect { newStatus ->
-                            _activeOrderLogistics.update { it?.copy(status = newStatus) }
-                            if (newStatus == OrderLogisticsStatus.DELIVERED) {
-                                stopCountdown()
-                            }
-                        }
-                }
+                // 4. Mulai polling status pesanan dari Supabase setiap 5 detik
+                //    Ini lebih andal dari Realtime yang butuh konfigurasi tambahan
+                startStatusPolling(transactionId)
             } catch (e: Exception) {
-                Log.e("ORDER", "Error during order confirmation: ${e.message}")
+                Log.e("ORDER", "Local database or logistics failed", e)
+            } finally {
+                // Selalu panggil onComplete agar loading spinner hilang dan navigasi lanjut
+                onComplete(transactionId)
             }
         }
-
-        Log.d("ORDER", "Confirmed #$transactionId via $paymentMethod | Total: ${current.totalPrice}")
-        return transactionId
     }
 
     fun resetOrder() {
+        // JANGAN cancel statusPollingJob di sini!
+        // Polling harus tetap jalan sampai merchant konfirmasi COMPLETED
         _orderState.value = OrderState()
+    }
+
+    /**
+     * Poll status pesanan dari Supabase setiap 5 detik.
+     * Saat merchant ubah status ke COMPLETED → banner customer hilang otomatis.
+     * Tidak bergantung pada Supabase Realtime sehingga 100% andal.
+     */
+    private fun startStatusPolling(orderId: String) {
+        statusPollingJob?.cancel()
+        statusPollingJob = viewModelScope.launch {
+            Log.d("ORDER", "Start polling status for order: $orderId")
+            while (true) {
+                kotlinx.coroutines.delay(5000) // Cek setiap 5 detik
+                try {
+                    val status = orderRepository.getOrderStatus(orderId)
+                    Log.d("ORDER", "Polled status: $status for order $orderId")
+                    when (status) {
+                        "COMPLETED" -> {
+                            Log.d("ORDER", "Order COMPLETED → stopping countdown & clearing banner")
+                            _activeOrderLogistics.update { it?.copy(status = OrderLogisticsStatus.DELIVERED) }
+                            kotlinx.coroutines.delay(2000) // Tampilkan "Selesai" 2 detik dulu
+                            stopCountdown() // Hapus banner
+                            break // Stop polling
+                        }
+                        "PROCESSING" -> {
+                            _activeOrderLogistics.update { it?.copy(status = OrderLogisticsStatus.IN_TRANSIT) }
+                        }
+                        "PENDING" -> {
+                            _activeOrderLogistics.update { it?.copy(status = OrderLogisticsStatus.PREPARING) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("ORDER", "Polling error: ${e.message}")
+                }
+            }
+        }
     }
 
     fun clearHistory() {
         viewModelScope.launch {
             orderDao.deleteAllOrders()
         }
+    }
+
+    override fun onCleared() {
+        countdownJob?.cancel()
+        statusPollingJob?.cancel()
+        super.onCleared()
     }
 }
