@@ -259,6 +259,7 @@ fun PaymentMethodItem(
 fun PaymentSuccessScreen(
     orderId: String,
     paymentMethod: String,
+    totalPrice: Int,
     onBackToHome: () -> Unit,
     onViewHistory: () -> Unit
 ) {
@@ -286,6 +287,7 @@ fun PaymentSuccessScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 SuccessInfoRow("No. Order", "#$orderId")
                 SuccessInfoRow("Metode", paymentMethod)
+                SuccessInfoRow("Total Bayar", "Rp${formatRupiah(totalPrice)}")
                 SuccessInfoRow("Status", "✅ Dikonfirmasi", color = Color(0xFF2E7D32))
             }
         }

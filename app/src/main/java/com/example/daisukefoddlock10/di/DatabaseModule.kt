@@ -22,7 +22,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "daisuke_foodlocks_db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides

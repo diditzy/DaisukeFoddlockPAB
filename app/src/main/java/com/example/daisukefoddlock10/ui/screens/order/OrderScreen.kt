@@ -1,5 +1,6 @@
 package com.example.daisukefoddlock10.ui.screens.order
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.daisukefoddlock10.data.model.PromoVoucher
+import com.example.daisukefoddlock10.data.model.ToppingCategory
 import com.example.daisukefoddlock10.data.model.promoVoucherList
 import com.example.daisukefoddlock10.formatRupiah
 import com.example.daisukefoddlock10.ui.components.*
@@ -36,8 +38,12 @@ fun OrderScreen(
     onHistoryClick: () -> Unit
 ) {
     val uiState by viewModel.orderState.collectAsStateWithLifecycle()
+    val logisticsState by viewModel.activeOrderLogistics.collectAsStateWithLifecycle()
+    val remainingMinutes by viewModel.remainingMinutes.collectAsStateWithLifecycle()
     var isVoucherSheetOpen by remember { mutableStateOf(false) }
+    var isCartSheetOpen by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val cartSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -57,29 +63,97 @@ fun OrderScreen(
                 modifier = Modifier.shadow(8.dp),
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Total Harga", style = MaterialTheme.typography.labelMedium)
-                        Text(
-                            "Rp${formatRupiah(uiState.totalPrice)}",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                Column {
+                    // Cart Summary Bar
+                    AnimatedVisibility(visible = uiState.cartItems.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isCartSheetOpen = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Check, 
+                                        contentDescription = null, 
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    AnimatedContent(
+                                        targetState = uiState.cartItems.size,
+                                        transitionSpec = {
+                                            if (targetState > initialState) {
+                                                (slideInVertically { height -> height } + fadeIn())
+                                                    .togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                                            } else {
+                                                (slideInVertically { height -> -height } + fadeIn())
+                                                    .togetherWith(slideOutVertically { height -> height } + fadeOut())
+                                            }.using(
+                                                SizeTransform(clip = false)
+                                            )
+                                        }, label = "CartCountAnimation"
+                                    ) { count ->
+                                        Text(
+                                            "$count Item terpilih",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "Lihat Keranjang 🛒",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
                     }
-                    Button(
-                        onClick = onCheckout,
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .navigationBarsPadding(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("🛒 Pesan Sekarang")
+                        Column {
+                            Text("Harga Menu Ini", style = MaterialTheme.typography.labelMedium)
+                            AnimatedContent(
+                                targetState = uiState.currentSelectionPrice,
+                                transitionSpec = {
+                                    fadeIn() togetherWith fadeOut()
+                                }, label = "PriceAnimation"
+                            ) { price ->
+                                Text(
+                                    "Rp ${formatRupiah(price)}",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            QuantitySelector(
+                                quantity = uiState.quantity,
+                                onQuantityChanged = { viewModel.updateQuantity(it) }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Button(
+                                onClick = { viewModel.addToCart() },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                            ) {
+                                Text("➕ Keranjang")
+                            }
+                        }
                     }
                 }
             }
@@ -90,6 +164,46 @@ fun OrderScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            item {
+                AnimatedVisibility(visible = logisticsState != null) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        remainingMinutes.let { minutes ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (uiState.isDelivery) "🛵" else "⏳",
+                                        style = MaterialTheme.typography.headlineMedium
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column {
+                                        Text(
+                                            text = if (uiState.isDelivery) "Pesanan Sedang Diantar" else "Pesanan Sedang Disiapkan",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                        Text(
+                                            text = if (uiState.isDelivery) "Estimasi Tiba: $minutes Menit" 
+                                            else "Estimasi Selesai: $minutes Menit",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             item { ProductHeader(food = uiState.selectedFood) }
             item {
                 FoodMenuSelector(
@@ -104,22 +218,54 @@ fun OrderScreen(
                 )
             }
             item {
-                SpicyLevelSelector(
-                    spicyLevel = uiState.spicyLevel,
-                    onLevelChanged = { viewModel.updateSpicyLevel(it) }
+                AnimatedVisibility(
+                    visible = uiState.selectedFood.isSpicySupported,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    SpicyLevelSelector(
+                        spicyLevel = uiState.spicyLevel,
+                        onLevelChanged = { viewModel.updateSpicyLevel(it) }
+                    )
+                }
+            }
+            item {
+                AnimatedVisibility(
+                    visible = uiState.selectedFood.allowedToppingCategory != ToppingCategory.NONE,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    ToppingSelector(
+                        allowedCategory = uiState.selectedFood.allowedToppingCategory,
+                        selectedToppings = uiState.toppings,
+                        onToppingToggled = { viewModel.toggleTopping(it) }
+                    )
+                }
+            }
+            item {
+                DeliverySelector(
+                    isDelivery = uiState.isDelivery,
+                    onDeliveryChanged = { viewModel.updateDelivery(it) }
                 )
             }
             item {
-                ToppingSelector(
-                    selectedToppings = uiState.toppings,
-                    onToppingToggled = { viewModel.toggleTopping(it) }
-                )
-            }
-            item {
-                TakeawaySelector(
-                    isTakeaway = uiState.isTakeaway,
-                    onTakeawayChanged = { viewModel.updateTakeaway(it) }
-                )
+                AnimatedVisibility(
+                    visible = uiState.isDelivery,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    OutlinedTextField(
+                        value = uiState.deliveryAddress,
+                        onValueChange = { viewModel.updateDeliveryAddress(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        label = { Text("📍 Detail Lokasi (Kelas/Ruangan)") },
+                        placeholder = { Text("Contoh: Gedung A, Ruang 102") },
+                        shape = RoundedCornerShape(12.dp),
+                        leadingIcon = { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                    )
+                }
             }
             item {
                 VoucherSelector(
@@ -139,7 +285,7 @@ fun OrderScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
             }
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            item { Spacer(modifier = Modifier.height(100.dp)) }
         }
 
         if (isVoucherSheetOpen) {
@@ -158,6 +304,65 @@ fun OrderScreen(
                     }
                 )
             }
+        }
+
+        if (isCartSheetOpen) {
+            ModalBottomSheet(
+                onDismissRequest = { isCartSheetOpen = false },
+                sheetState = cartSheetState,
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                CartBottomSheetContent(
+                    orderState = uiState,
+                    onRemoveItem = { viewModel.removeFromCart(it) },
+                    onConfirmOrder = {
+                        scope.launch { cartSheetState.hide() }.invokeOnCompletion {
+                            isCartSheetOpen = false
+                            onCheckout()
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CartBottomSheetContent(
+    orderState: com.example.daisukefoddlock10.data.model.OrderState,
+    onRemoveItem: (String) -> Unit,
+    onConfirmOrder: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            "Review Pesanan 🛒",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(16.dp)
+        )
+        
+        LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+            item {
+                PaymentSummaryCard(
+                    orderState = orderState,
+                    onRemoveItem = onRemoveItem
+                )
+            }
+        }
+        
+        Button(
+            onClick = onConfirmOrder,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(12.dp),
+            enabled = orderState.cartItems.isNotEmpty()
+        ) {
+            Text("💳 Konfirmasi & Bayar (Rp ${formatRupiah(orderState.totalPrice)})")
         }
     }
 }
@@ -223,7 +428,7 @@ fun VoucherBottomSheetContent(
                 ListItem(
                     headlineContent = { Text(voucher.title, fontWeight = FontWeight.Bold) },
                     supportingContent = { Text(voucher.description) },
-                    overlineContent = { Text("Min. Order Rp${formatRupiah(voucher.minOrder)}", color = MaterialTheme.colorScheme.primary) },
+                    overlineContent = { Text("Min. Order Rp ${formatRupiah(voucher.minOrder)}", color = MaterialTheme.colorScheme.primary) },
                     leadingContent = { 
                         RadioButton(selected = isSelected, onClick = null) 
                     },

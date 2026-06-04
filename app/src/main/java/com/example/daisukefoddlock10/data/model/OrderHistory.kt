@@ -12,16 +12,16 @@ enum class OrderStatus {
 }
 
 data class OrderHistory(
-    val orderId: String = UUID.randomUUID().toString().take(8).uppercase(),
+    val orderId: String,
     val food: FoodItem,
     val size: PortionSize,
     val toppings: Set<Topping>,
-    val isTakeaway: Boolean,
     val notes: String,
+    val quantity: Int = 1,
     val totalPrice: Int,
     val paymentMethod: String,
     val status: OrderStatus = OrderStatus.CONFIRMED,
-    val timestamp: Long = System.currentTimeMillis(),
+    val date: String,
     val appliedVoucher: String? = null
 )
 
@@ -31,23 +31,21 @@ val dummyOrderHistoryList = listOf(
         food = foodMenuList[0],
         size = PortionSize.LARGE,
         toppings = setOf(Topping.EGG, Topping.CHEESE),
-        isTakeaway = false,
         notes = "Jangan pakai bawang",
         totalPrice = 57000,
         paymentMethod = "GoPay",
         status = OrderStatus.COMPLETED,
-        timestamp = System.currentTimeMillis() - 3_600_000
+        date = "10 Oct 2023, 14:30"
     ),
     OrderHistory(
         orderId = "E5F6G7H8",
         food = foodMenuList[4],
         size = PortionSize.REGULAR,
         toppings = setOf(Topping.SAUSAGE),
-        isTakeaway = true,
         notes = "",
         totalPrice = 43000,
         paymentMethod = "QRIS",
         status = OrderStatus.PREPARING,
-        timestamp = System.currentTimeMillis() - 7_200_000
+        date = "10 Oct 2023, 15:45"
     )
 )
