@@ -28,7 +28,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.daisukefoddlock10.data.model.OrderHistory
 import com.example.daisukefoddlock10.data.model.OrderStatus
 import com.example.daisukefoddlock10.formatRupiah
-import com.example.daisukefoddlock10.formatTimestamp
 import com.example.daisukefoddlock10.ui.screens.SharedOrderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,7 +154,7 @@ fun OrderHistoryCard(order: OrderHistory) {
                 Column {
                     Text(order.food.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                     Text(
-                        "${order.size.name.lowercase()} • ${order.toppings.size} topping",
+                        "${order.size.name.lowercase()} • ${order.toppings.size} topping • x${order.quantity}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -171,7 +170,7 @@ fun OrderHistoryCard(order: OrderHistory) {
             ) {
                 Column {
                     Text(
-                        formatTimestamp(order.timestamp),
+                        order.date,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -68,7 +68,7 @@ fun CheckoutScreen(
             item { OrderDetailCard(uiState) }
 
             item { SectionHeader("Mode Pengambilan") }
-            item { DeliveryModeCard(uiState.isTakeaway) }
+            item { DeliveryModeCard(uiState.isDelivery) }
             
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
@@ -120,8 +120,8 @@ fun OrderSummaryCard(state: com.example.daisukefoddlock10.data.model.OrderState)
             state.toppings.forEach { topping ->
                 PriceRow("+ ${topping.name.lowercase().replaceFirstChar { it.uppercase() }}", 3000)
             }
-            if (state.isTakeaway) {
-                PriceRow("+ Kemasan (Takeaway)", 2000)
+            if (state.isDelivery) {
+                PriceRow("+ Biaya Antar", 5000)
             }
             state.appliedVoucher?.let { voucher ->
                 Row(
@@ -186,7 +186,7 @@ fun OrderDetailCard(state: com.example.daisukefoddlock10.data.model.OrderState) 
 }
 
 @Composable
-fun DeliveryModeCard(isTakeaway: Boolean) {
+fun DeliveryModeCard(isDelivery: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
@@ -196,12 +196,12 @@ fun DeliveryModeCard(isTakeaway: Boolean) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (isTakeaway) "🛍️" else "🍽️",
+                text = if (isDelivery) "🛵" else "🍽️",
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = if (isTakeaway) "Takeaway — Ambil di kasir" else "Dine In — Makan di tempat",
+                text = if (isDelivery) "Delivery — Diantar ke lokasi" else "Dine In — Makan di tempat",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )

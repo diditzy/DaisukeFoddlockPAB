@@ -23,8 +23,8 @@ sealed class Screen(val route: String) {
     object Payment : Screen("payment/{totalPrice}") {
         fun createRoute(totalPrice: Int) = "payment/$totalPrice"
     }
-    object PaymentSuccess : Screen("payment_success/{orderId}/{paymentMethod}") {
-        fun createRoute(orderId: String, method: String) = "payment_success/$orderId/$method"
+    object PaymentSuccess : Screen("payment_success/{orderId}/{paymentMethod}/{totalPrice}") {
+        fun createRoute(orderId: String, method: String, totalPrice: Int) = "payment_success/$orderId/$method/$totalPrice"
     }
     object History : Screen("history")
 }
@@ -60,7 +60,7 @@ fun AppNavGraph(navController: NavHostController) {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onPaymentSuccess = { orderId, method ->
-                    navController.navigate(Screen.PaymentSuccess.createRoute(orderId, method)) {
+                    navController.navigate(Screen.PaymentSuccess.createRoute(orderId, method, totalPrice)) {
                         popUpTo(Screen.Order.route) { inclusive = false }
                     }
                 }
@@ -70,14 +70,17 @@ fun AppNavGraph(navController: NavHostController) {
             route = Screen.PaymentSuccess.route,
             arguments = listOf(
                 navArgument("orderId") { type = NavType.StringType },
-                navArgument("paymentMethod") { type = NavType.StringType }
+                navArgument("paymentMethod") { type = NavType.StringType },
+                navArgument("totalPrice") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
             val method = backStackEntry.arguments?.getString("paymentMethod") ?: ""
+            val totalPrice = backStackEntry.arguments?.getInt("totalPrice") ?: 0
             PaymentSuccessScreen(
                 orderId = orderId,
                 paymentMethod = method,
+                totalPrice = totalPrice,
                 onBackToHome = {
                     navController.navigate(Screen.Order.route) {
                         popUpTo(Screen.Order.route) { inclusive = true }
