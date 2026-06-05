@@ -681,8 +681,6 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 <div align="center">
 
-Made with ❤️ for the **UNS Campus** community.
-
 *DaisukeFoddlock 1.0 — Bringing canteen food to your doorstep, one Compose screen at a time.*
 
 </div>
