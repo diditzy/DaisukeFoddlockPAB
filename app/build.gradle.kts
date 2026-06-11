@@ -7,6 +7,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.reader().use { localProperties.load(it) }
+}
+
+val midtransClientKey: String = localProperties.getProperty("midtrans.client_key", "")
+val supabaseUrl: String = localProperties.getProperty("supabase.url", "")
+val supabaseKey: String = localProperties.getProperty("supabase.key", "")
+val backendUrl: String = localProperties.getProperty("backend.url", "http://10.0.2.2:8080/")
+
 android {
     namespace = "com.example.daisukefoddlock10"
     compileSdk = 36
@@ -19,6 +30,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "MIDTRANS_CLIENT_KEY", "\"$midtransClientKey\"")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+        buildConfigField("String", "BACKEND_URL", "\"$backendUrl\"")
     }
 
     buildTypes {
@@ -39,6 +55,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -73,6 +90,9 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+
+    // Midtrans
+    implementation(libs.midtrans.uikit)
 
     // Supabase & Ktor
     implementation(platform(libs.supabase.bom))

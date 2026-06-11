@@ -1,6 +1,7 @@
 package com.example.daisukefoddlock10.di
 
 import android.content.Context
+import com.example.daisukefoddlock10.BuildConfig
 import com.example.daisukefoddlock10.util.NotificationHelper
 import dagger.Module
 import dagger.Provides
@@ -25,10 +26,8 @@ object SupabaseModule {
     @Singleton
     fun provideSupabaseClient(): SupabaseClient {
         return createSupabaseClient(
-            supabaseUrl = "https://cznfldmtttxlvaggpilp.supabase.co",
-            // PENTING: Gunakan "anon public" key dari Supabase Dashboard > Settings > API
-            // Key yang benar diawali dengan "eyJ..." bukan "sb_publishable_..."
-            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bmZsZG10dHR4bHZhZ2dwaWxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzkzNTAsImV4cCI6MjA5NjE1NTM1MH0.WL4Af_0LMWvWvyZmsMHIBwL5iYpG-nFBujoxCoFZoMI"
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABASE_KEY
         ) {
             install(Postgrest)
             install(Realtime)

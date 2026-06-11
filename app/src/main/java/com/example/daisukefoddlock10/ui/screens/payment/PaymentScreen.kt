@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,8 +29,6 @@ import com.example.daisukefoddlock10.formatRupiah
 import com.example.daisukefoddlock10.ui.screens.SharedOrderViewModel
 import com.example.daisukefoddlock10.ui.theme.*
 import com.example.daisukefoddlock10.ui.components.SectionTitle
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -40,9 +39,14 @@ fun PaymentScreen(
     onPaymentSuccess: (orderId: String, paymentMethod: String) -> Unit
 ) {
     var selectedPayment by remember { mutableStateOf<PaymentMethod?>(null) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var showQrisDialog by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val isProcessing by viewModel.isPaymentProcessing.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.paymentSuccessEvent.collect { (orderId, method) ->
+            onPaymentSuccess(orderId, method)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,18 +74,7 @@ fun PaymentScreen(
                     }
                     Button(
                         onClick = {
-                            if (selectedPayment?.id == "qris") {
-                                showQrisDialog = true
-                            } else {
-                                isProcessing = true
-                                scope.launch {
-                                    viewModel.confirmOrder(selectedPayment!!.name) { orderId ->
-                                        isProcessing = false
-                                        viewModel.resetOrder()
-                                        onPaymentSuccess(orderId, selectedPayment!!.name)
-                                    }
-                                }
-                            }
+                            viewModel.startMidtransPayment(context)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = selectedPayment != null && !isProcessing,
@@ -157,49 +150,6 @@ fun PaymentScreen(
         }
     }
 
-    if (showQrisDialog) {
-        AlertDialog(
-            onDismissRequest = { showQrisDialog = false },
-            title = { Text("Scan QRIS") },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Image(
-                        painter = painterResource(id = R.drawable.qrishdaisuke),
-                        contentDescription = "QRIS Daisuke",
-                        modifier = Modifier
-                            .size(240.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Fit
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        "Scan QR di atas menggunakan aplikasi GoPay, OVO, DANA, dll.",
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Batas waktu: 15:00", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    showQrisDialog = false
-                    isProcessing = true
-                    scope.launch {
-                        viewModel.confirmOrder("QRIS") { orderId ->
-                            isProcessing = false
-                            viewModel.resetOrder()
-                            onPaymentSuccess(orderId, "QRIS")
-                        }
-                    }
-                }) { Text("Konfirmasi Sudah Bayar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showQrisDialog = false }) { Text("Batal") }
-            }
-        )
-    }
 }
 
 @Composable

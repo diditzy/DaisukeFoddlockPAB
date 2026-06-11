@@ -45,12 +45,16 @@ class AuthRepositoryImpl @Inject constructor(
             
             Log.d("AuthRepo", "Final Role: $role")
             
+            val supabaseSession = auth.currentSessionOrNull()
+            val jwtToken = supabaseSession?.accessToken
+
             val session = UserSession(
                 id = user.id,
                 email = user.email ?: "",
-                role = role
+                role = role,
+                token = jwtToken
             )
-            
+
             sessionManager.saveSession(session)
             Result.success(session)
         } catch (e: Exception) {

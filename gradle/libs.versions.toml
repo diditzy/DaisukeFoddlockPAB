@@ -20,6 +20,7 @@ supabase = "2.6.1"
 ktor = "2.3.12"
 datastore = "1.1.2"
 kotlinxSerialization = "1.7.3"
+midtrans = "2.5.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,9 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Midtrans
+midtrans-uikit = { group = "com.midtrans", name = "uikit", version.ref = "midtrans" }
 
 # Supabase & Ktor
 supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }

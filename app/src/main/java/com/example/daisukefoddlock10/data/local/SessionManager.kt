@@ -9,7 +9,9 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.daisukefoddlock10.data.model.UserSession
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,5 +44,13 @@ class SessionManager @Inject constructor(
         context.dataStore.edit { preferences ->
             preferences.remove(SESSION_KEY)
         }
+    }
+
+    /**
+     * Mengambil JWT token secara synchronous.
+     * Digunakan oleh OkHttp AuthInterceptor yang berjalan di thread non-main.
+     */
+    fun getToken(): String? = runBlocking {
+        userSession.firstOrNull()?.token
     }
 }

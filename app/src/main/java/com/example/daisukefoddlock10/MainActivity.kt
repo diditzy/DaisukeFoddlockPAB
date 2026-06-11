@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DaisukeFoodlocksTheme {
+
                 val navController = rememberNavController()
                 AppNavGraph(
                     navController = navController,
