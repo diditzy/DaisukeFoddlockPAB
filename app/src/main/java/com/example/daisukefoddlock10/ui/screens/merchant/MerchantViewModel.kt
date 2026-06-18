@@ -44,7 +44,6 @@ class MerchantViewModel @Inject constructor(
         startRealtimeListener()
     }
 
-    // Muat pesanan dari Supabase via REST (lebih handal dari Realtime untuk initial load)
     fun loadOrders() {
         viewModelScope.launch {
             try {
@@ -62,7 +61,6 @@ class MerchantViewModel @Inject constructor(
         }
     }
 
-    // Dengarkan perubahan realtime — jika ada INSERT/UPDATE baru, reload data
     private fun startRealtimeListener() {
         viewModelScope.launch {
             try {
@@ -73,19 +71,16 @@ class MerchantViewModel @Inject constructor(
                     Log.e("MerchantVM", "Realtime error: ${e.message}")
                 }.collect { action ->
                     Log.d("MerchantVM", "Realtime change detected: ${action::class.simpleName}")
-                    // Saat ada perubahan, reload data via REST
                     reloadOrdersSilently()
                 }
                 channel.subscribe()
             } catch (e: Exception) {
                 Log.e("MerchantVM", "Failed to start realtime listener: ${e.message}")
-                // Fallback: gunakan polling setiap 10 detik
                 startPolling()
             }
         }
     }
 
-    // Polling fallback: reload setiap 10 detik tanpa menampilkan loading spinner
     private fun startPolling() {
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
@@ -96,7 +91,6 @@ class MerchantViewModel @Inject constructor(
         }
     }
 
-    // Reload tanpa mengganti UI state ke Loading (agar tidak flicker)
     private suspend fun reloadOrdersSilently() {
         try {
             val orders = postgrest.from("orders")
@@ -126,7 +120,6 @@ class MerchantViewModel @Inject constructor(
                         eq("id", orderId)
                     }
                 }
-                // Reload setelah update status
                 reloadOrdersSilently()
             } catch (e: Exception) {
                 Log.e("MerchantVM", "Failed to update order status: ${e.message}")

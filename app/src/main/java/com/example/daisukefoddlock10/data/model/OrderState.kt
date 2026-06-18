@@ -7,13 +7,11 @@ enum class PortionSize { REGULAR, LARGE }
 
 @Serializable
 enum class Topping(val category: ToppingCategory) {
-    // Savory Toppings
     EGG(ToppingCategory.SAVORY),
     SAUSAGE(ToppingCategory.SAVORY),
     CHEESE(ToppingCategory.SAVORY),
     MUSHROOM(ToppingCategory.SAVORY),
     
-    // Sweet Toppings
     MATCHA_POWDER(ToppingCategory.SWEET),
     ICE_CREAM(ToppingCategory.SWEET),
     CHOCO_CHIPS(ToppingCategory.SWEET),
