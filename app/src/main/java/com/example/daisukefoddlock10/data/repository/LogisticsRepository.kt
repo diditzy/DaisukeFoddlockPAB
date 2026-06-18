@@ -23,24 +23,17 @@ import javax.inject.Singleton
 class LogisticsRepository @Inject constructor(
     private val supabase: SupabaseClient
 ) {
-    /**
-     * Mengamati perubahan status pesanan secara real-time dari Supabase.
-     * Saat merchant ubah status ke COMPLETED, customer akan mendapat notifikasi.
-     */
     fun observeOrderStatus(orderId: String): Flow<OrderLogisticsStatus> = flow {
         val channelName = "order_status_$orderId"
         val channel = supabase.realtime.channel(channelName)
 
-        // Emit status terbaru via Realtime saat merchant update pesanan
         val changeFlow = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
             table = "orders"
             filter("id", io.github.jan.supabase.postgrest.query.filter.FilterOperator.EQ, orderId)
         }.mapNotNull { action ->
             try {
-                // Baca status baru dari payload Supabase
                 val newRecord = action.record
                 val statusStr = newRecord["status"]?.jsonPrimitive?.content
-                Log.d("LogisticsRepo", "Order $orderId status updated to: $statusStr")
                 when (statusStr) {
                     "COMPLETED" -> OrderLogisticsStatus.DELIVERED
                     "PROCESSING" -> OrderLogisticsStatus.IN_TRANSIT
@@ -48,19 +41,14 @@ class LogisticsRepository @Inject constructor(
                     else -> null
                 }
             } catch (e: Exception) {
-                Log.e("LogisticsRepo", "Failed to parse status update: ${e.message}")
                 null
             }
         }
 
-        // Wajib subscribe agar channel mulai mendengarkan!
         channel.subscribe()
-        Log.d("LogisticsRepo", "Subscribed to realtime channel: $channelName")
-
         emitAll(changeFlow)
     }
 
-    // Mock implementation for UNS Campus nodes
     fun getMockLogistics(orderId: String): OrderLogistics {
         return OrderLogistics(
             id = orderId,

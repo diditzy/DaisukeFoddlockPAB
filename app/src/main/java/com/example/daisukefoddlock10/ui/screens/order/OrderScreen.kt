@@ -73,7 +73,6 @@ fun OrderScreen(
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Column {
-                    // Cart Summary Bar
                     AnimatedVisibility(visible = uiState.cartItems.isNotEmpty()) {
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),

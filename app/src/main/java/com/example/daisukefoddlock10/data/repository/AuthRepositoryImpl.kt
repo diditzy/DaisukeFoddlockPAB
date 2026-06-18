@@ -32,7 +32,6 @@ class AuthRepositoryImpl @Inject constructor(
             Log.d("AuthRepo", "User signed in: ${user.id}")
             Log.d("AuthRepo", "User Metadata: ${user.userMetadata}")
             
-            // Mengambil role dari metadata dengan cara yang lebih aman
             val roleStr = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull ?: "CUSTOMER"
             Log.d("AuthRepo", "Detected Role String: $roleStr")
             

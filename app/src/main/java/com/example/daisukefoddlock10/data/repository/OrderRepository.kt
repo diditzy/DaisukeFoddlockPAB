@@ -22,7 +22,6 @@ class OrderRepository @Inject constructor(
         }
     }
 
-    // Cek status pesanan tertentu dari Supabase (untuk polling)
     suspend fun getOrderStatus(orderId: String): String? {
         return try {
             val response = postgrest.from("orders")

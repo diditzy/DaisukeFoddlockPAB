@@ -18,14 +18,11 @@ data class PaymentMethod(
 )
 
 val paymentMethodList = listOf(
-    // E-Wallet
     PaymentMethod("gopay", "GoPay", Icons.Default.AccountBalanceWallet, PaymentCategory.E_WALLET, "Bayar via GoPay", "Instan"),
     PaymentMethod("ovo", "OVO", Icons.Default.AccountBalanceWallet, PaymentCategory.E_WALLET, "Bayar via OVO", "Instan"),
     PaymentMethod("dana", "DANA", Icons.Default.AccountBalanceWallet, PaymentCategory.E_WALLET, "Bayar via DANA", "Instan"),
     PaymentMethod("shopeepay", "ShopeePay", Icons.Default.AccountBalanceWallet, PaymentCategory.E_WALLET, "Bayar via ShopeePay", "Instan"),
-    // QRIS
     PaymentMethod("qris", "QRIS", Icons.Default.QrCode, PaymentCategory.QRIS, "Scan QR Code dari aplikasi apapun", "Instan"),
-    // Bank Transfer
     PaymentMethod("bca", "Transfer BCA", Icons.Default.AccountBalance, PaymentCategory.BANK_TRANSFER, "Virtual Account BCA", "1-5 menit"),
     PaymentMethod("mandiri", "Transfer Mandiri", Icons.Default.AccountBalance, PaymentCategory.BANK_TRANSFER, "Virtual Account Mandiri", "1-5 menit"),
     PaymentMethod("bni", "Transfer BNI", Icons.Default.AccountBalance, PaymentCategory.BANK_TRANSFER, "Virtual Account BNI", "1-5 menit"),

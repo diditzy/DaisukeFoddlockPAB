@@ -2,7 +2,6 @@ package com.example.daisukefoddlock10.data.model
 
 import kotlinx.serialization.Serializable
 
-// Model item yang aman untuk dikirim ke Supabase (tanpa imageRes Android)
 @Serializable
 data class OrderItemData(
     val food_name: String,

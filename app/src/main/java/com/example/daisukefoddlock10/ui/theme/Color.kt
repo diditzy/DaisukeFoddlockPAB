@@ -2,7 +2,6 @@ package com.example.daisukefoddlock10.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// --- Light Theme Colors ---
 val MerahJepang = Color(0xFFE62129)
 val EmasSoft = Color(0xFFD4AF37)
 val OnMerahJepang = Color(0xFFFFFFFF)
@@ -20,7 +19,6 @@ val SurfaceVariantLight = Color(0xFFF9F1E7)
 val OnSurfaceVariantLight = Color(0xFF4E4439)
 val OutlineLight = Color(0xFFD7CCC8)
 
-// --- Dark Theme Colors ---
 val MerahJepangDark = Color(0xFFFFB4AB)
 val EmasSoftDark = Color(0xFFEFBF48)
 val OnMerahJepangDark = Color(0xFF690005)
@@ -42,7 +40,6 @@ val SurfaceVariantDark = Color(0xFF4E4439)
 val OnSurfaceVariantDark = Color(0xFFD7CCC8)
 val OutlineDark = Color(0xFF9F8D8A)
 
-// --- Common Colors ---
 val Error = Color(0xFFBA1A1A)
 val OnError = Color(0xFFFFFFFF)
 val ErrorContainer = Color(0xFFFFDAD6)
