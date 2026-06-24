@@ -192,6 +192,7 @@ class SharedOrderViewModel @Inject constructor(
 
         viewModelScope.launch {
             var transactionId = ""
+            var isSupabaseSuccess = false
             try {
                 val orderItems = current.cartItems.map { item ->
                     OrderItemData(
@@ -215,16 +216,17 @@ class SharedOrderViewModel @Inject constructor(
                     items = orderItems
                 )
                 
-                val result = kotlinx.coroutines.withTimeoutOrNull(5000) {
-                    orderRepository.placeOrder(orderRequest)
-                }
+                val result = orderRepository.placeOrder(orderRequest)
 
-                if (result != null && result.isSuccess) {
+                if (result.isSuccess) {
                     transactionId = result.getOrNull()?.id ?: UUID.randomUUID().toString().take(8).uppercase()
+                    isSupabaseSuccess = true
                 } else {
+                    Log.e("ORDER", "Supabase failed: ${result.exceptionOrNull()?.message}")
                     transactionId = UUID.randomUUID().toString().take(8).uppercase()
                 }
             } catch (e: Exception) {
+                Log.e("ORDER", "Order process failed", e)
                 transactionId = UUID.randomUUID().toString().take(8).uppercase()
             }
 
@@ -240,7 +242,7 @@ class SharedOrderViewModel @Inject constructor(
                             toppings = item.toppings.joinToString(",") { it.name },
                             notes = current.notes,
                             paymentMethod = paymentMethod,
-                            status = OrderStatus.CONFIRMED.name
+                            status = if (isSupabaseSuccess) OrderStatus.CONFIRMED.name else "OFFLINE"
                         )
                     )
                 }
@@ -251,7 +253,9 @@ class SharedOrderViewModel @Inject constructor(
                 _activeOrderLogistics.value = mockLogistics
                 startCountdown()
                 
-                startStatusPolling(transactionId)
+                if (isSupabaseSuccess) {
+                    startStatusPolling(transactionId)
+                }
             } catch (e: Exception) {
                 Log.e("ORDER", "Local database or logistics failed", e)
             } finally {
